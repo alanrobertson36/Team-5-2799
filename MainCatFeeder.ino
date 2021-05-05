@@ -146,3 +146,12 @@ void loop(){
      
       }
 }
+
+float gramsPerFeed(float cweight, int targetWeight, int kcalPerGram, int feedNum)        //kcal and feedNum is the user input variable
+{
+    int kcal_Day = (int)(30 * cweight + 70);    //maintain weight
+    
+    float gramsMeal = (kcal_Day * (float)(1/kcalPerGram)) / feedNum;   // grams per feeding
+     
+    return gramsMeal;      // amount of grams for mainting weight, simply multiply 0.7 to get the grams for loosing weight
+}
