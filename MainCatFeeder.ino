@@ -67,28 +67,25 @@ void clearRow(int a){
 }
 
 //Grams Per Feeding Function
-float gramsFeed(float cweight, int targetWeight, int kcalPerGram, int feedNum)        //kcal and feedNum is the user input variable
+float gramsFeed(float cweight, float targetWeight, float kcalPerGram, float feedNum)        //kcal and feedNum is the user input variable
 {
-    int kcal_Day = (int)(30 * cweight + 70);    //maintain weight
-    Serial.print("\n");
-    Serial.print(cweight);
-    Serial.print("\n");
-    Serial.print("is this even doing anything");
-    Serial.print("\n");
-    Serial.print(kcal_Day);
-    Serial.print("\n");
-    float gramsMeal = (kcal_Day * (float)(1000/kcalPerGram)) / feedNum;   // grams per feeding
-    Serial.print(gramsMeal);
-    Serial.print("\n");
+    float kcal_Day = (30 * cweight + 70);    //maintain weight
+    
+    float gramsMeal = (kcal_Day * (1000/kcalPerGram)) / feedNum;   // grams per feeding
+
+    if(cweight > targetWeight)
+      gramsMeal*=.7;
+   
     return gramsMeal;      // amount of grams for mainting weight, simply multiply 0.7 to get the grams for loosing weight
 }
 
-  float weightCat = 5;
-  int targWeight = 3;
+  float weightCat = 3;
+  float targWeight = 3;
   float gramPerFeed = 0;
-  int feedPerDay = 3;
+  float feedPerDay = 3;
   int kcalKg[3] = {3,5,0};
-  int kCalKg = 1;
+  int targWeightArr[2] = {0,5};
+  float kCalKg = 1;
   
 /*Main Code*/
 void loop(){
@@ -122,7 +119,7 @@ void loop(){
   }
   */
   int key = keypad.getKey();
-  
+  int wait = 0;
   switch(mode){
     
     case 1:
@@ -148,10 +145,6 @@ void loop(){
       break;
 /*
 ------------------------------------------------------------- 
-
-
-
-
 --------------------------------------------------------------
 */      
     case 2: //manual mode
@@ -206,10 +199,6 @@ void loop(){
       break;
 /*
 ------------------------------------------------------------- 
-
-
-
-
 --------------------------------------------------------------
 */       
     case 3: //auto mode
@@ -223,20 +212,59 @@ void loop(){
           break;
         }
       }
-      /*
-       * 
-       * 
-       * 
-       * 
-       * Have them enter target weight
-       * 
-       * 
-       * 
-       * 
-       * 
-       */
+
+
+
+      //Enter Target Weight Below
       lcd.setCursor(0,1);
-      lcd.print("    Set kCal/kg    ");
+      lcd.print("Set Target Weight-Kg");
+      
+      lcd.setCursor(0,2);
+      //user entry
+      lcd.print("Enter 10s Digit:    ");
+      delay(200);
+      while(1){
+        key =keypad.getKey();
+        if(key){
+          targWeightArr[0] = key - 48;
+          break;
+        }
+      }
+      
+      lcd.setCursor(16,2);
+      lcd.print(targWeightArr[0]);
+      delay(500);
+      
+      clearRow(2);
+      lcd.setCursor(0,2);
+      lcd.print("1s:                 ");
+      delay(200);
+      while(1){
+        key =keypad.getKey();
+        if(key){
+          targWeightArr[1] = key - 48;
+          break;
+        }
+      }
+      lcd.setCursor(3,2);
+      lcd.print(targWeightArr[1]);
+      delay(500);
+      
+      lcd.setCursor(0,2);
+      lcd.print("  Entered Value:    ");
+      lcd.setCursor(16,2);
+      targWeight = targWeightArr[0] * 10 + targWeightArr[1]; 
+      lcd.print((int)targWeight); 
+      while(1){
+        if(keypad.getKey()){
+          break;
+        }
+      }
+      
+      
+      //Enter Kcals below
+      lcd.setCursor(0,1);
+      lcd.print("    Set kCal/kg     ");
       
       lcd.setCursor(0,2);
       //user entry
@@ -307,8 +335,33 @@ void loop(){
       lcd.print("Entered Value:     ");
       lcd.setCursor(14,2);
       kCalKg = kcalKg[0] * 1000 + kcalKg[1] * 100 + kcalKg[2] * 10 + kcalKg[3]; 
-      lcd.print(kCalKg); 
+      lcd.print((int)kCalKg); 
       //wait for input to continue
+      lcd.setCursor(0,3);
+      lcd.print("                 A->");
+      while(1){
+        if(keypad.getKey()){
+          break;
+        }
+      }
+      clearRow(0);
+      clearRow(1);
+      clearRow(2);
+      clearRow(3);
+      lcd.setCursor(1,0);
+      lcd.print("  Feedings/Day?:   ");
+      lcd.setCursor(0,2);
+      lcd.print("     (Max of 4)     ");
+      delay(500);
+      while(wait == 0){
+        key =keypad.getKey();
+        if(key){
+          feedPerDay = key - 48;
+          wait = 1;
+        }
+      }
+      lcd.setCursor(10,1);
+      lcd.print((int)feedPerDay);
       lcd.setCursor(0,3);
       lcd.print("                 A->");
       while(1){
@@ -320,36 +373,18 @@ void loop(){
       break;
 /*
 ------------------------------------------------------------- 
-
-
-
-
 --------------------------------------------------------------
 */ 
     case 4:
    
         lcd.setCursor(0,0);
-        lcd.print("Weight(Lbs):    ");
+        lcd.print("Weight(Lbs):        ");
         lcd.setCursor(0,1);
         lcd.print("T2F:                ");
         lcd.setCursor(0,2);
         lcd.print("Amt to Feed:        ");
-        Serial.print("Cat weight is:");
-        Serial.print(weightCat);
-        Serial.print("\n");
-        Serial.print("Target weight is:");
-        Serial.print(targWeight);
-        Serial.print("\n");
-        Serial.print("kcal per kg is:");
-        Serial.print(kCalKg);
-        Serial.print("\n");
-        Serial.print("feed per day is:");
-        Serial.print(feedPerDay);
-        Serial.print("\n");
-        Serial.print(gramPerFeed);
-        Serial.print("\n");
         lcd.setCursor(12,2);
-        gramPerFeed = gramsFeed(weightCat, targWeight, kcalKg, feedPerDay); 
+        gramPerFeed = gramsFeed(weightCat, targWeight, kCalKg, feedPerDay); 
         lcd.print(gramPerFeed);
         lcd.setCursor(3,3);
         lcd.print("A:Setup Screen      ");
