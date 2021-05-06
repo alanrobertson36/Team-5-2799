@@ -150,33 +150,38 @@ void loop(){
     case 2: //manual mode
       lcd.setCursor(0,0);
       lcd.print("       Manual       ");
-      lcd.setCursor(0,1);
-      lcd.print("   Feedings/Day?:    ");
-      lcd.setCursor(0,4);
-      lcd.print("      Max of 4      ");
+      clearRow(0);
+      clearRow(1);
+      clearRow(2);
+      clearRow(3);
+      lcd.setCursor(1,0);
+      lcd.print("  Feedings/Day?:   ");
+      lcd.setCursor(0,2);
+      lcd.print("     (Max of 4)     ");
       delay(500);
-      /*while(1){
+      while(wait == 0){
         key =keypad.getKey();
         if(key){
           feedPerDay = key - 48;
+          wait = 1;
+        }
+      }
+      lcd.setCursor(10,1);
+      lcd.print((int)feedPerDay);
+      lcd.setCursor(0,3);
+      lcd.print("                 A->");
+      while(1){
+        if(keypad.getKey()){
           break;
         }
-      }*/
-      lcd.setCursor(17,1);
-      lcd.print(feedPerDay);
-      lcd.setCursor(17,3);
-      lcd.print("A->");
-      while(1){
-        key = keypad.getKey();
-        if(key == 'A'){
-          break; 
-         }
       }
+      
       clearRow(0);
       clearRow(1);
+      clearRow(2);
       clearRow(3);
-      lcd.setCursor(0,1);
-      lcd.print("Grams/Feeding?:      ");
+      lcd.setCursor(0,0);
+      lcd.print("   Grams/Feeding?   ");
       delay(500);
       while(1){
         key =keypad.getKey();
@@ -185,8 +190,8 @@ void loop(){
           break;
         }
       }
-      lcd.setCursor(15,1);
-      lcd.print(gramPerFeed);
+      lcd.setCursor(10,1);
+      lcd.print((int)gramPerFeed);
       lcd.setCursor(17,3);
       lcd.print("A->");
       while(1){
@@ -362,6 +367,7 @@ void loop(){
       }
       lcd.setCursor(10,1);
       lcd.print((int)feedPerDay);
+      gramPerFeed = gramsFeed(weightCat, targWeight, kCalKg, feedPerDay);
       lcd.setCursor(0,3);
       lcd.print("                 A->");
       while(1){
@@ -383,8 +389,7 @@ void loop(){
         lcd.print("T2F:                ");
         lcd.setCursor(0,2);
         lcd.print("Amt to Feed:        ");
-        lcd.setCursor(12,2);
-        gramPerFeed = gramsFeed(weightCat, targWeight, kCalKg, feedPerDay); 
+        lcd.setCursor(12,2); 
         lcd.print(gramPerFeed);
         lcd.setCursor(3,3);
         lcd.print("A:Setup Screen      ");
