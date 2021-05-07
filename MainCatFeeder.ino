@@ -77,6 +77,7 @@ float gramsFeed(float cweight, float targetWeight, float kcalPerGram, float feed
       gramsMeal*=.7;
    
     return gramsMeal;      // amount of grams for mainting weight, simply multiply 0.7 to get the grams for loosing weight
+    
 }
 
   float weightCat = 3;
@@ -85,39 +86,23 @@ float gramsFeed(float cweight, float targetWeight, float kcalPerGram, float feed
   float feedPerDay = 3;
   int kcalKg[3] = {3,5,0};
   int targWeightArr[2] = {0,5};
+  int gramFeedArr[3] = {2,0,0};
   float kCalKg = 1;
-  
+  float food = 0;
+  long pet = 0;
+  int feedFinish = 0;
 /*Main Code*/
 void loop(){
-  /*
-  long pet = 0;
-  petScale.tare();
-  while(1){
-    pet = petScale.read();
-    Serial.print(pet);
-    Serial.print('\n');
-    if(pet < 630000){
-      myservo.write(90);
-    }
-    if(pet >= 630000){
-      myservo.write(0);
-    }
-  }
   
-  long food = 0;
+  /*
   foodScale.tare();
   while(1){
     food = foodScale.read();
     Serial.print(food);
     Serial.print('\n');
-    if(food < 190000){
-      myservo.write(0);
-    }
-    if(food >=190000){
-      myservo.write(91);
-    }
   }
   */
+  
   int key = keypad.getKey();
   int wait = 0;
   switch(mode){
@@ -182,24 +167,69 @@ void loop(){
       clearRow(3);
       lcd.setCursor(0,0);
       lcd.print("   Grams/Feeding?   ");
-      delay(500);
+     
+      clearRow(3);
+      lcd.setCursor(0,1);
+      lcd.print("100s:               ");
+      delay(200);
       while(1){
         key =keypad.getKey();
         if(key){
-          gramPerFeed = key - 48;
+          gramFeedArr[0] = key - 48;
           break;
         }
       }
-      lcd.setCursor(10,1);
-      lcd.print((int)gramPerFeed);
-      lcd.setCursor(17,3);
-      lcd.print("A->");
+      lcd.setCursor(5,1);
+      lcd.print(gramFeedArr[0]);
+      delay(500);
+     
+
+      clearRow(3);
+      lcd.setCursor(0,1);
+      lcd.print("10s:                ");
       while(1){
-        key = keypad.getKey();
-        if(key == 'A'){
-          break; 
-         }
+        key =keypad.getKey();
+        if(key){
+          gramFeedArr[1] = key - 48;
+          break;
+        }
       }
+      delay(200);
+      lcd.setCursor(4,1);
+      lcd.print(gramFeedArr[1]);
+      delay(500);
+      
+
+      clearRow(3);
+      lcd.setCursor(0,1);
+      lcd.print("1s:                 ");
+      while(1){
+        key =keypad.getKey();
+        if(key){
+          gramFeedArr[2] = key - 48;
+          break;
+        }
+      }
+      delay(200);
+      lcd.setCursor(3,1);
+      lcd.print(gramFeedArr[2]);
+      delay(500);
+   
+      
+      lcd.setCursor(0,1);
+      lcd.print("Entered Value:     ");
+      lcd.setCursor(14,1);
+      gramPerFeed = gramFeedArr[0] * 100 + gramFeedArr[1] * 10 + gramFeedArr[2]; 
+      lcd.print((int)gramPerFeed); 
+      //wait for input to continue
+      lcd.setCursor(0,3);
+      lcd.print("                 A->");
+      while(1){
+        if(keypad.getKey()){
+          break;
+        }
+      }
+      feedFinish = 0;
       mode =4;
       break;
 /*
@@ -375,6 +405,7 @@ void loop(){
           break;
         }
       }
+      feedFinish = 0;
       mode = 4;
       break;
 /*
@@ -392,13 +423,29 @@ void loop(){
         lcd.setCursor(12,2); 
         lcd.print(gramPerFeed);
         lcd.setCursor(3,3);
-        lcd.print("A:Setup Screen      ");
+        lcd.print("A:Setup Screen   ");
         if(key == 'A'){
           lcd.clear();
           mode = 1;
           break; 
          }
+        
+        
+        while(feedFinish == 0){
+          foodScale.set_scale(calibration_factor1);
+          food = foodScale.get_units(2);
+          Serial.print(food);
+          Serial.print('\n');
+          if(food<gramPerFeed){
+            myservo.write(80);
+          }
+          if(food>=gramPerFeed){
+            myservo.write(90);
+            feedFinish = 1;
+          }
+        }
         break;
       
       }
+      
 }
