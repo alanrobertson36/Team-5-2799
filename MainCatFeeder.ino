@@ -14,7 +14,7 @@ HX711 foodScale;
 
 
 //Pet Scale Info
-#define calibration_factor2 23.4
+#define calibration_factor2 22.4
 #define DOUT2  27
 #define CLK2  29
 HX711 petScale;
@@ -85,23 +85,17 @@ float gramsFeed(float cweight, float targetWeight, float kcalPerGram, float feed
   float gramPerFeed = 0;
   float feedPerDay = 3;
   int kcalKg[3] = {3,5,0};
-  int targWeightArr[2] = {0,5};
+  int targWeightArr[3] = {0,5, 1};
   int gramFeedArr[3] = {2,0,0};
   float kCalKg = 1;
   float food = 0;
   long pet = 0;
   int feedFinish = 0;
+  int weightReading = 0;
+
+  
 /*Main Code*/
 void loop(){
-  
-  /*
-  foodScale.tare();
-  while(1){
-    food = foodScale.read();
-    Serial.print(food);
-    Serial.print('\n');
-  }
-  */
   
   int key = keypad.getKey();
   int wait = 0;
@@ -241,13 +235,22 @@ void loop(){
       lcd.print("     Automatic     ");
       lcd.setCursor(1,1);
       lcd.print("Place Cat On Scale");
-      delay(500);
-      while(1){
-        if(keypad.getKey()){
-          break;
-        }
+      lcd.setCursor(0,2);
+      lcd.print("Weight(kg):Reading..");
+      weightReading = 0;
+      while(weightReading == 0){
+        delay(6000);
+        petScale.set_scale(calibration_factor2);
+        weightCat = (petScale.get_units(5))/1000;
+        Serial.print(weightCat);
+        Serial.print('\n');
+        lcd.setCursor(0,2);
+        lcd.print("Weight(kg):         ");
+        lcd.setCursor(11, 2);
+        lcd.print(weightCat);
+        delay(3000);
+        weightReading = 1;
       }
-
 
 
       //Enter Target Weight Below
@@ -284,12 +287,27 @@ void loop(){
       lcd.setCursor(3,2);
       lcd.print(targWeightArr[1]);
       delay(500);
-      
+
+       clearRow(2);
       lcd.setCursor(0,2);
-      lcd.print("  Entered Value:    ");
-      lcd.setCursor(16,2);
-      targWeight = targWeightArr[0] * 10 + targWeightArr[1]; 
-      lcd.print((int)targWeight); 
+      lcd.print(".1s:                ");
+      delay(200);
+      while(1){
+        key =keypad.getKey();
+        if(key){
+          targWeightArr[2] = key - 48;
+          break;
+        }
+      }
+      lcd.setCursor(4,2);
+      lcd.print(targWeightArr[2]);
+      delay(500);
+
+      lcd.setCursor(0,2);
+      lcd.print("Entered Value:     ");
+      lcd.setCursor(14,2);
+      targWeight = targWeightArr[0] * 10 + targWeightArr[1] + targWeightArr[2] * .1; 
+      lcd.print(targWeight); 
       while(1){
         if(keypad.getKey()){
           break;
@@ -416,6 +434,8 @@ void loop(){
    
         lcd.setCursor(0,0);
         lcd.print("Weight(Lbs):        ");
+        lcd.setCursor(12,0);
+        lcd.print(weightCat);
         lcd.setCursor(0,1);
         lcd.print("T2F:                ");
         lcd.setCursor(0,2);
