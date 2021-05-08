@@ -42,9 +42,12 @@ Keypad keypad = Keypad( makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_
 int mode = 1;
 
 /*Setup Code*/
+boolean toggle4 = LOW;
 
 void setup(){
+
   Serial.begin(57600);
+
     
   foodScale.begin(DOUT1, CLK1);
   foodScale.set_scale(calibration_factor1);
@@ -57,7 +60,7 @@ void setup(){
   // Print a message to the LCD.
   lcd.backlight();
   
-  myservo.attach(9);
+  myservo.attach(9); 
 }
 
 /*Clear Row Function*/
@@ -79,6 +82,29 @@ float gramsFeed(float cweight, float targetWeight, float kcalPerGram, float feed
     return gramsMeal;      // amount of grams for mainting weight, simply multiply 0.7 to get the grams for loosing weight
     
 }
+long unsigned prevMill = 0;
+long unsigned mill = millis();
+long unsigned tempTime = millis();
+long unsigned displayHours(long unsigned setTime){
+  long unsigned hours =(((setTime - (mill- prevMill))/3600000) % 24);
+  return (hours);
+}
+long unsigned displayMinutes(long unsigned setTime){
+  long unsigned minutes =(((setTime - (mill- prevMill) )/60000) % 60); 
+  return (minutes);
+}
+long unsigned displaySeconds(long unsigned setTime){
+  long unsigned seconds =(((setTime - (mill- prevMill) )/1000) % 60); 
+  return (seconds);
+}
+//8 hours equals 28800000 
+//6 hours equals 21600000
+//4 hours equals 14400000
+//3 hours equals 10800000
+//2 hours equals 7200000
+//1 hour equals  3600000
+
+
 
   float weightCat = 3;
   float targWeight = 3;
@@ -96,7 +122,6 @@ float gramsFeed(float cweight, float targetWeight, float kcalPerGram, float feed
   
 /*Main Code*/
 void loop(){
-  
   int key = keypad.getKey();
   int wait = 0;
   switch(mode){
@@ -431,13 +456,28 @@ void loop(){
 --------------------------------------------------------------
 */ 
     case 4:
-   
+        feedFinish = 0;
+        mill = millis();
+        Serial.print(mill);
+        Serial.print('\n');
+        long unsigned timeLeft = (120000/feedPerDay);
         lcd.setCursor(0,0);
         lcd.print("Weight(Lbs):        ");
         lcd.setCursor(12,0);
         lcd.print(weightCat);
         lcd.setCursor(0,1);
         lcd.print("T2F:                ");
+        lcd.setCursor(4,1);
+        lcd.print(displayHours(timeLeft));
+        lcd.setCursor(6,1);
+        lcd.print(":");
+        lcd.setCursor(7,1);
+        lcd.print(displayMinutes(timeLeft));
+        lcd.setCursor(0,2);
+        lcd.setCursor(9,1);
+        lcd.print(":");
+        lcd.setCursor(10,1);
+        lcd.print(displaySeconds(timeLeft));
         lcd.setCursor(0,2);
         lcd.print("Amt to Feed:        ");
         lcd.setCursor(12,2); 
@@ -449,22 +489,26 @@ void loop(){
           mode = 1;
           break; 
          }
-        
-        
-        while(feedFinish == 0){
-          foodScale.set_scale(calibration_factor1);
-          food = foodScale.get_units(2);
-          Serial.print(food);
-          Serial.print('\n');
-          if(food<gramPerFeed){
-            myservo.write(80);
+        for(int n = 0; n < feedPerDay; n++){
+         if( (displaySeconds(timeLeft) <= 0) && (displayMinutes(timeLeft) <= 0) && (displayHours(timeLeft) <= 0) ){
+          while(feedFinish == 0){
+              foodScale.set_scale(calibration_factor1);
+              food = foodScale.get_units(2);
+              if(food<gramPerFeed){
+                myservo.write(80);
+              }
+              if(food>=gramPerFeed){
+                myservo.write(90);
+                timeLeft = 120000/feedPerDay;
+                prevMill = mill;
+                feedFinish = 1;
+              }
           }
-          if(food>=gramPerFeed){
-            myservo.write(90);
-            feedFinish = 1;
-          }
+          
         }
-        break;
+         
+       }
+       break;
       
       }
       
