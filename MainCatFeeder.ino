@@ -109,7 +109,7 @@ long unsigned displaySeconds(long unsigned setTime){
   float weightCat = 3;
   float targWeight = 3;
   float gramPerFeed = 0;
-  float feedPerDay = 3;
+  int feedPerDay = 3;
   int kcalKg[3] = {3,5,0};
   int targWeightArr[3] = {0,5, 1};
   int gramFeedArr[3] = {2,0,0};
@@ -118,7 +118,11 @@ long unsigned displaySeconds(long unsigned setTime){
   long pet = 0;
   int feedFinish = 0;
   int weightReading = 0;
-
+  long unsigned setupMill = 0;
+  bool feeding = false;
+  float tempW1 = 0;
+  int numsRun = 0;
+  long unsigned timeLeft = 0;
   
 /*Main Code*/
 void loop(){
@@ -249,6 +253,7 @@ void loop(){
         }
       }
       feedFinish = 0;
+      setupMill = millis();
       mode =4;
       break;
 /*
@@ -326,13 +331,15 @@ void loop(){
       }
       lcd.setCursor(4,2);
       lcd.print(targWeightArr[2]);
-      delay(500);
+            delay(500);
 
       lcd.setCursor(0,2);
       lcd.print("Entered Value:     ");
       lcd.setCursor(14,2);
       targWeight = targWeightArr[0] * 10 + targWeightArr[1] + targWeightArr[2] * .1; 
-      lcd.print(targWeight); 
+      lcd.print(targWeight);
+      lcd.setCursor(0,3);
+      lcd.print("                 A->"); 
       while(1){
         if(keypad.getKey()){
           break;
@@ -341,6 +348,8 @@ void loop(){
       
       
       //Enter Kcals below
+      lcd.setCursor(0,3);
+      lcd.print("                    ");
       lcd.setCursor(0,1);
       lcd.print("    Set kCal/kg     ");
       
@@ -431,6 +440,8 @@ void loop(){
       lcd.setCursor(0,2);
       lcd.print("     (Max of 4)     ");
       delay(500);
+      lcd.setCursor(0,3);
+      lcd.print("                 A->");
       while(wait == 0){
         key =keypad.getKey();
         if(key){
@@ -444,11 +455,13 @@ void loop(){
       lcd.setCursor(0,3);
       lcd.print("                 A->");
       while(1){
-        if(keypad.getKey()){
+        key = keypad.getKey();
+        if(key == 'A'){
           break;
         }
       }
       feedFinish = 0;
+      setupMill = millis();
       mode = 4;
       break;
 /*
@@ -457,14 +470,31 @@ void loop(){
 */ 
     case 4:
         feedFinish = 0;
-        mill = millis();
+        mill = millis()- setupMill;
         Serial.print(mill);
         Serial.print('\n');
-        long unsigned timeLeft = (120000/feedPerDay);
+        if( ((numsRun % feedPerDay) == 0) && (numsRun != 0) ){
+          timeLeft = 43200000;
+        }
+        if( ((numsRun % feedPerDay) != 0) || (numsRun == 0) ){
+          timeLeft = 120000/feedPerDay;
+        }
         lcd.setCursor(0,0);
-        lcd.print("Weight(Lbs):        ");
+        lcd.print("Weight(Kgs):        ");
         lcd.setCursor(12,0);
         lcd.print(weightCat);
+
+        petScale.set_scale(calibration_factor2);
+        foodScale.set_scale(calibration_factor1);
+        tempW1 = foodScale.get_units(5);
+        if( ( (foodScale.get_units(2) >= (tempW1 + 10)) || (foodScale.get_units(2) <= (tempW1 - 10)) ) 
+                          && (feeding == false) ){
+          lcd.setCursor(12,0);
+          lcd.print("----");
+          weightCat = petScale.get_units(10)/1000;
+          gramPerFeed = gramsFeed(weightCat, targWeight, kCalKg, feedPerDay);
+        }
+        
         lcd.setCursor(0,1);
         lcd.print("T2F:                ");
         lcd.setCursor(4,1);
@@ -478,6 +508,22 @@ void loop(){
         lcd.print(":");
         lcd.setCursor(10,1);
         lcd.print(displaySeconds(timeLeft));
+        lcd.setCursor(13,1);
+        lcd.print("BL:");
+
+        //checking battery life
+        if(millis()>=11520000){
+         lcd.setCursor(16,1);
+         lcd.print("LOW "); 
+        }
+        if((millis()<11520000)&& (millis()>=5760000)){
+         lcd.setCursor(16,1);
+         lcd.print("MED "); 
+        }
+        if((millis()<5760000)){
+         lcd.setCursor(16,1);
+         lcd.print("HIGH"); 
+        }
         lcd.setCursor(0,2);
         lcd.print("Amt to Feed:        ");
         lcd.setCursor(12,2); 
@@ -489,11 +535,13 @@ void loop(){
           mode = 1;
           break; 
          }
+
         for(int n = 0; n < feedPerDay; n++){
          if( (displaySeconds(timeLeft) <= 0) && (displayMinutes(timeLeft) <= 0) && (displayHours(timeLeft) <= 0) ){
+          feeding = true;
           while(feedFinish == 0){
               foodScale.set_scale(calibration_factor1);
-              food = foodScale.get_units(2);
+              food = foodScale.get_units(5);
               if(food<gramPerFeed){
                 myservo.write(80);
               }
@@ -501,12 +549,13 @@ void loop(){
                 myservo.write(90);
                 timeLeft = 120000/feedPerDay;
                 prevMill = mill;
+                feeding = false;
+                numsRun++;
                 feedFinish = 1;
               }
           }
           
         }
-         
        }
        break;
       
